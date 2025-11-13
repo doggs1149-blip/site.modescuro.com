@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>mode$curo</title>
+
+<!-- Fonte gótica -->
+<link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --crimson: #a80000;
+    --dark: #000;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--dark);color:#fff;font-family:'UnifrakturCook',cursive;overflow:hidden}
+
+  /* leve fumaça feita em CSS (sem imagem) */
+  .smoke {
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(168,0,0,0.04) 0%, rgba(0,0,0,0) 30%),
+      radial-gradient(ellipse at 80% 80%, rgba(120,0,0,0.03) 0%, rgba(0,0,0,0) 30%),
+      radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.01) 0%, rgba(0,0,0,0) 35%);
+    animation: smokeMove 40s linear infinite;
+  }
+  @keyframes smokeMove {
+    0% { transform: translate3d(0,0,0) scale(1); }
+    50% { transform: translate3d(-6%, -4%,0) scale(1.02); }
+    100% { transform: translate3d(0,0,0) scale(1); }
+  }
+
+  /* layout central */
+  .wrap{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px}
+  .card{max-width:900px;width:100%;text-align:center;padding:20px}
+
+  /* intro */
+  .intro{
+    display:flex;flex-direction:column;align-items:center;gap:22px;
+  }
+  .intro .title{
+    font-size:3.2rem;
+    color:var(--crimson);
+    letter-spacing:6px;
+    text-shadow:0 0 20px rgba(168,0,0,0.12), 0 0 8px rgba(0,0,0,0.6);
+    position:relative;
+    /* efeito derretimento (camada clone que desliza pra baixo e esmaece) */
+  }
+  /* clone derretido */
+  .title::after{
+    content:attr(data-text);
+    position:absolute; left:0; top:0; width:100%;
+    color:var(--crimson);
+    filter: blur(2px);
+    transform: translateY(0);
+    opacity:0.9;
+    mix-blend-mode:screen;
+    text-shadow: 0 10px 18px rgba(0,0,0,0.6);
+    -webkit-mask: linear-gradient(#000 60%, transparent 100%);
+    animation: drip 3s linear infinite;
+    pointer-events:none;
+  }
+  @keyframes drip{
+    0%{ transform: translateY(0); opacity:0.95; }
+    50%{ transform: translateY(6px); opacity:0.75; }
+    100%{ transform: translateY(0); opacity:0.95; }
+  }
+
+  .intro .subtitle{
+    color: rgba(255,255,255,0.12);
+    letter-spacing:2px;
+    font-size:0.95rem;
+  }
+
+  /* play area */
+  .play-wrap{display:inline-flex;align-items:center;gap:14px;margin-top:6px;cursor:pointer}
+  .play-btn{
+    border:1px solid rgba(255,255,255,0.12);
+    background:transparent;
+    color:#fff;
+    padding:10px 22px;
+    font-family: monospace;
+    letter-spacing:2px;
+    font-size:1rem;
+    border-radius:6px;
+    transition: all .25s ease;
+  }
+  .play-btn:hover{transform:translateY(-3px); background: rgba(255,255,255,0.03)}
+
+  /* mão vetorial carmesim (SVG inline estilizado) */
+  .hand-svg{width:56px;height:56px;display:block;filter: drop-shadow(0 0 8px rgba(168,0,0,0.25));}
+  /* efeito de "derreter" na mão: animação de translateY e scale */
+  .hand-svg .drip{animation:handDrip 2.6s ease-in-out infinite}
+  @keyframes handDrip{
+    0%{ transform: translateY(0) scale(1) }
+    50%{ transform: translateY(4px) scale(0.995) }
+    100%{ transform: translateY(0) scale(1) }
+  }
+
+  /* frases area */
+  .phrases{display:none;margin-top:30px}
+  .symbol{font-size:1.8rem;color:rgba(255,255,255,0.12);margin:20px 0}
+  .line{
+    color:var(--crimson);
+    font-size:1.4rem;
+    margin:28px 10px;
+    opacity:0;
+    transform: translateY(18px);
+    transition: opacity 1s ease, transform 1s ease;
+    text-shadow:
+      0 1px 0 rgba(0,0,0,0.6),
+      0 6px 12px rgba(168,0,0,0.06);
+    /* pseudo derretimento nas linhas: duplicate layer behind that fades lower */
+    position:relative;
+  }
+  .line::after{
+    content:attr(data-text);
+    position:absolute; left:0; top:0; width:100%;
+    color: rgba(255,0,0,0.18);
+    z-index:-1;
+    filter: blur(3px);
+    transform: translateY(6px);
+    opacity:0.9;
+    -webkit-mask: linear-gradient(#000 55%, transparent 100%);
+  }
+  .line.visible{opacity:1; transform:translateY(0)}
+
+  /* final line specifically styled */
+  .final{
+    font-size:1.6rem;
+    letter-spacing:1px;
+    margin-top:40px;
+    color:var(--crimson);
+    text-transform:none;
+    opacity:0;
+    transform:translateY(18px);
+    transition: opacity 1s ease, transform 1s ease;
+    font-weight:700;
+  }
+  .final.visible{opacity:1; transform:translateY(0)}
+
+  /* responsive */
+  @media (max-width:480px){
+    .title{font-size:2.2rem}
+    .hand-svg{width:44px;height:44px}
+    .line{font-size:1.1rem}
+  }
+</style>
+</head>
+<body>
+
+<div class="smoke" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="card">
+    <!-- INTRO -->
+    <div id="intro" class="intro">
+      <div class="symbol" style="font-size:28px; color:rgba(255,255,255,0.12)">  </div>
+      <div class="title" data-text="mode$curo">mode$curo</div>
+      <div class="subtitle">o anúncio — 2026</div>
+
+      <div class="play-wrap" onclick="startRitual()">
+        <!-- SVG mão vetorial carmesim, estilizada -->
+        <svg class="hand-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stop-color="#ff4b4b"/>
+              <stop offset="100%" stop-color="#8b0000"/>
+            </linearGradient>
+          </defs>
+          <!-- stylized hand shape (symbolic, not realistic) -->
+          <g fill="url(#g)" transform="translate(6,4)">
+            <path class="drip" d="M18 2c-2 0-3 2-3 4v5c0 .8-.6 1.5-1.4 1.6C11 13 9.7 12 9 10.8 8 9 7.2 8 5.6 8 3.4 8 2 10 2 12.5 2 17 6 22 10 22c3 0 4.3-1 5-3 .7-2 2.2-3 3.5-3.5 1.4-.5 2.5-.2 3.2 0 .7.2 2 1.5 2.5 3 .6 1.6 1.8 2.6 3.5 2.6 3 0 5-3 5-6.5 0-3.6-2.5-6-5.2-6-1.2 0-2.2.4-2.9 1.1-.6.6-1 1.5-1.3 2.3-.2.6-.8 1-1.4.9-.4 0-.8-.3-.9-.7-.6-2-1.8-4.2-3.8-4.4C22 5 21 4 18 2z"/>
+          </g>
+        </svg>
+
+        <button class="play-btn">PLAY</button>
+      </div>
+
+      <div class="symbol" style="font-size:14px;color:rgba(255,255,255,0.08);margin-top:8px">  </div>
+    </div>
+
+    <!-- PHRASES -->
+    <div id="phrases" class="phrases" aria-hidden="true">
+      <div class="symbol"></div>
+
+      <div class="line" data-text="as vozes do vazio sussurram promessas esquecidas."> as vozes do vazio sussurram promessas esquecidas.</div>
+      <div class="symbol"></div>
+
+      <div class="line" data-text="a lua observa o que o sol finge não ver."> a lua observa o que o sol finge não ver.</div>
+      <div class="symbol"></div>
+
+      <div class="line" data-text="nem toda luz revela — algumas queimam."> nem toda luz revela — algumas queimam.</div>
+      <div class="symbol"></div>
+
+      <div class="line" data-text="o tempo sangra devagar, dentro de quem sente demais."> o tempo sangra devagar, dentro de quem sente demais.</div>
+      <div class="symbol"></div>
+
+      <div class="line" data-text="onde o amor morreu, a escuridão aprendeu a dançar."> onde o amor morreu, a escuridão aprendeu a dançar.</div>
+      <div class="symbol"></div>
+
+      <div class="line" data-text="há beleza em se perder — se for no próprio abismo."> há beleza em se perder — se for no próprio abismo.</div>
+
+      <!-- final required line -->
+      <div class="final" id="finalLine"> em 2026 o modo será e$curo.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // função que inicia a sequência: esconde intro, mostra frases, controla a aparição das linhas
+  function startRitual(){
+    const intro = document.getElementById('intro');
+    const phrases = document.getElementById('phrases');
+    intro.style.transition = 'opacity 1s ease';
+    intro.style.opacity = '0';
+    setTimeout(()=> {
+      intro.style.display = 'none';
+      // revela container de frases
+      phrases.style.display = 'block';
+      // anima cada .line com delay
+      const lines = document.querySelectorAll('.line');
+      lines.forEach((el, i) => {
+        setTimeout(()=> {
+          el.classList.add('visible');
+        }, 800 * (i+1)); // 0.8s entre cada
+      });
+      // mostra a final um pouco depois
+      setTimeout(()=> {
+        document.getElementById('finalLine').classList.add('visible');
+        // permitir scroll caso queira
+        document.documentElement.style.overflowY = 'auto';
+        document.body.style.overflowY = 'auto';
+      }, 800 * (lines.length + 2));
+    }, 900);
+  }
+</script>
+
+</body>
+</html>
